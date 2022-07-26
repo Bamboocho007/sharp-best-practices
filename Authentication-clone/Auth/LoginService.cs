@@ -7,12 +7,12 @@ namespace Authentication_clone.Auth
     public class LoginService
     {
         private readonly JwtSettings _jwtSettings;
-        private readonly UsersService _usersService;
+        private readonly UsersRepo _usersRepo;
         private readonly IConfiguration _config;
 
         public LoginService(JwtSettings jwtSettings, IConfiguration config) {
             _jwtSettings = jwtSettings;
-            _usersService = new UsersService(config);
+            _usersRepo = new UsersRepo(config);
             _config = config;
         }
 
@@ -23,7 +23,7 @@ namespace Authentication_clone.Auth
 
             if (validated.IsValid)
             {
-                var user = await _usersService.GetByEmail(form.Email);
+                var user = await _usersRepo.GetByEmail(form.Email);
                 if (user != null)
                 {
                     if (PasswordHelper.VerifyPassword(user.Password, form.Password))

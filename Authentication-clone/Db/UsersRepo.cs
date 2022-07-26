@@ -3,10 +3,10 @@ using Dapper;
 
 namespace Authentication_clone.Db
 {
-    public class UsersService : IRepo<User>
+    public class UsersRepo : IRepo<User>
     {
         private readonly IConfiguration _config;
-        public UsersService(IConfiguration config)
+        public UsersRepo(IConfiguration config)
         {
             _config = config;
         }
@@ -14,7 +14,10 @@ namespace Authentication_clone.Db
         public async Task<User> Add(User obj)
         {
             using var connection = Connection.GetPgConnection(_config);
-            var res = await connection.QueryFirstAsync<User?>("INSERT INTO public.users(@Name, @Email, @Role, @Password)", new { obj.Name, obj.Email, obj.Role, obj.Password });
+            var res = await connection.QueryFirstAsync<User?>(
+                "INSERT INTO public.users(name, email, role, password) VALUES (@Name, @Email, @Role, @Password); SELECT * FROM public.users WHERE email = @Email;",
+                new { obj.Name, obj.Email, obj.Role, obj.Password }
+            );
             Console.WriteLine($"new user name = {res?.Name}");
             return res;
         }
