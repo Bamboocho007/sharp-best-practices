@@ -1,7 +1,6 @@
 ﻿using Authentication_clone.Auth;
-using Authentication_clone.Db;
 using Authentication_clone.DTOs;
-using Authentication_clone.Models;
+using Authentication_clone.Helpers;
 using Authentication_clone.ModelServices;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
@@ -32,13 +31,33 @@ namespace Authentication_clone.Controllers
         }
 
         [HttpGet]
-        [AuthorizeJwt(Roles = $"{nameof(Role.Contributor)}")]
+        [AuthorizeJwt(Roles = $"{nameof(Role.Contributor)}, {nameof(Role.Administarator)}")]
         public async Task<ActionResult> GetUserInfo()
         {
             var tokenString = Request.Headers.Authorization
                               .ToString().Split(" ")[1];
             var user = await UserService.GetInfo(tokenString, _config);
             return user != null ? Ok(user) : NotFound(); 
+        }
+
+        [HttpPut("{id}")]
+        [AuthorizeJwt(Roles = $"{nameof(Role.Contributor)}, {nameof(Role.Administarator)}")]
+        public async Task<ActionResult> Update([FromBody] UpdateUserForm form)
+        {
+            var routeId = Request.RouteValues["id"];
+            var data = await UserService.Update(form, NullableHelpers.TryParseNullableInt((string?)routeId), _config);
+            var serialized = JsonSerializer.Serialize(data);
+            return data?.Data != null ? Ok(serialized) : BadRequest(serialized);
+        }
+
+        [HttpDelete("{id}")]
+        [AuthorizeJwt(Roles = $"{nameof(Role.Administarator)}")]
+        public async Task<ActionResult> Delete()
+        {
+            var routeId = Request.RouteValues["id"];
+            var data = await UserService.Delete(NullableHelpers.TryParseNullableInt((string?)routeId), _config);
+            var serialized = JsonSerializer.Serialize(data);
+            return data?.Data != null ? Ok(serialized) : BadRequest(serialized);
         }
 
         [HttpPost]

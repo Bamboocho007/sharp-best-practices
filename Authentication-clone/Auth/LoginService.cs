@@ -37,13 +37,7 @@ namespace Authentication_clone.Auth
                 return new ResponseData<TokenResponse>("There is no user with current email!");
             }
 
-            var errors = new List<ErrorsDescription>();
-
-            foreach (var error in validated.Errors)
-            {
-                errors.Add(new ErrorsDescription { Message = error.ErrorMessage, PropertyName = error.PropertyName });
-            }
-            return new ResponseData<TokenResponse>("Form data is not valid!", errors);
+            return new ResponseData<TokenResponse>("Form data is not valid!", validated.Errors);
         }
     }
 }

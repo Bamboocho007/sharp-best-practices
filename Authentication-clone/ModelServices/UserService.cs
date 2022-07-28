@@ -17,8 +17,7 @@ namespace Authentication_clone.ModelServices
 
         public static async Task<ResponseData<User?>> Create(UserForm form, IConfiguration config)
         {
-            UserFormValidator validator = new UserFormValidator();
-
+            UserFormValidator validator = new ();
             var validated = validator.Validate(form);
             var repo = new UsersRepo(config);
 
@@ -34,13 +33,44 @@ namespace Authentication_clone.ModelServices
                 return new ResponseData<User?>(user);
             }
 
-            var errors = new List<ErrorsDescription>();
+            return new ResponseData<User?>("Form data is not valid!", validated.Errors);
+        }
 
-            foreach (var error in validated.Errors)
+        public static async Task<ResponseData<User?>> Update(UpdateUserForm form, int? userId, IConfiguration config)
+        {
+            if (userId == null)
             {
-                errors.Add(new ErrorsDescription { Message = error.ErrorMessage, PropertyName = error.PropertyName });
+                return new ResponseData<User?>("User id is required!");
             }
-            return new ResponseData<User?>("Form data is not valid!", errors);
+
+            UpdateUserFormValidator validator = new();
+            var validated = validator.Validate(form);
+            var repo = new UsersRepo(config);
+            var currentUser = await repo.GetById((int)userId);
+
+            if (currentUser != null)
+            {
+                if(validated.IsValid)
+                {
+                    var updatedUser = await repo.Update(new User { Id = currentUser.Id, Name = form.Name, Email = form.Email, Role = form.Role, Password = PasswordHelper.HashPassword(form.Password) });
+                    return new ResponseData<User?>(updatedUser);
+                }
+
+                return new ResponseData<User?>("Form data is not valid!", validated.Errors);
+            }
+
+            return new ResponseData<User?>("User no exists!");
+        }
+
+        public static async Task<ResponseData<User?>> Delete(int? id, IConfiguration config)
+        {
+            if (id == null)
+            {
+                return new ResponseData<User?>("User id is required!");
+            }
+
+            var repo = new UsersRepo(config);
+            return new ResponseData<User?>(await repo.Delete((int)id));
         }
     }
 }

@@ -14,45 +14,44 @@ namespace Authentication_clone.Db
         public async Task<User> Add(User obj)
         {
             using var connection = Connection.GetPgConnection(_config);
-            var res = await connection.QueryFirstAsync<User?>(
-                "INSERT INTO public.users(name, email, role, password) VALUES (@Name, @Email, @Role, @Password); SELECT * FROM public.users WHERE email = @Email;",
-                new { obj.Name, obj.Email, obj.Role, obj.Password }
-            );
-            Console.WriteLine($"new user name = {res?.Name}");
-            return res;
-        }
-
-        public async Task Delete(int Id)
-        {
-            throw new NotImplementedException();
+            return await connection.QuerySingleAsync<User>(
+                "INSERT INTO public.users(name, email, role, password) VALUES (@Name, @Email, @Role, @Password) RETURNING*;", obj);
         }
 
         public async Task<User?> GetById(int Id)
         {
-            User? user;
-            using (var connection = Connection.GetPgConnection(_config))
-            {
-                var res = await connection.QueryAsync<User>("SELECT * FROM public.users WHERE id = @Id", new { Id });
-                user = res.FirstOrDefault();
-                Console.WriteLine($"user name = {user?.Name}");
-            }
-            return user;
+            using var connection = Connection.GetPgConnection(_config);
+            var users = await connection.QueryAsync<User>("SELECT * FROM public.users WHERE id = @Id;", new { Id });
+            return users.FirstOrDefault();
         }
 
         public async Task<User?> GetByEmail(string email)
         {
-            User? user;
-            using (var connection = Connection.GetPgConnection(_config))
-            {
-                var res = await connection.QueryAsync<User>("SELECT * FROM public.users WHERE email = @email", new { email });
-                user = res.FirstOrDefault();
-            }
-            return user;
+            using var connection = Connection.GetPgConnection(_config);
+            var res = await connection.QueryAsync<User>("SELECT * FROM public.users WHERE email = @email", new { email });
+            return res.FirstOrDefault();
         }
 
-        public async Task<User> Update(int Id, User newData)
+        public async Task<User?> Update(User obj)
         {
-            throw new NotImplementedException();
+            using var connection = Connection.GetPgConnection(_config);
+            return await connection.QuerySingleAsync<User>(
+                   "UPDATE public.users SET email=@Email, role=@Role, name=@Name, password=@Password WHERE id=@Id RETURNING*;",
+                   obj);
+        }
+
+        public async Task<User?> Delete(int Id)
+        {
+            using var connection = Connection.GetPgConnection (_config);
+            var user = await GetById(Id);
+
+            if (user == null)
+            {
+                return null;
+            }
+
+            var res = await connection.ExecuteAsync("DELETE FROM public.users WHERE id=@Id;", new { Id });
+            return res > 0 ? user : null;
         }
     }
 }

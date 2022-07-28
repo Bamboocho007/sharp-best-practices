@@ -5,7 +5,7 @@
         public T? Data { get; set; }
         public ResponseMetadata ResponseMetadata { get; set; }
 
-        public ResponseData(T? data)
+        public ResponseData(T data)
         {
             Data = data;
             ResponseMetadata = new ResponseMetadata(null, new List<ErrorsDescription>());
@@ -17,10 +17,22 @@
             ResponseMetadata = new ResponseMetadata(errorMessage, new List<ErrorsDescription>());
         }
 
-        public ResponseData(string errorMessage, List<ErrorsDescription> errors)
+        public ResponseData(string errorMessage, List<FluentValidation.Results.ValidationFailure> errors)
         {
             Data = default;
-            ResponseMetadata = new ResponseMetadata(errorMessage, errors);
+            ResponseMetadata = new ResponseMetadata(errorMessage, GetErrorsList(errors));
+        }
+
+        private List<ErrorsDescription> GetErrorsList(List<FluentValidation.Results.ValidationFailure> errors)
+        {
+            var errorsList = new List<ErrorsDescription>();
+
+            foreach (var error in errors)
+            {
+                errorsList.Add(new ErrorsDescription { Message = error.ErrorMessage, PropertyName = error.PropertyName });
+            }
+
+            return errorsList;
         }
     }
 
