@@ -8,12 +8,10 @@ namespace Authentication_clone.Auth
     {
         private readonly JwtSettings _jwtSettings;
         private readonly UsersRepo _usersRepo;
-        private readonly IConfiguration _config;
 
-        public LoginService(JwtSettings jwtSettings, IConfiguration config) {
+        public LoginService(JwtSettings jwtSettings, UsersRepo usersRepo) {
             _jwtSettings = jwtSettings;
-            _usersRepo = new UsersRepo(config);
-            _config = config;
+            _usersRepo = usersRepo;
         }
 
         public async Task<ResponseData<TokenResponse>> Login(LoginForm form)

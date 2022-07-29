@@ -11,21 +11,19 @@ namespace Authentication_clone.Controllers
     [Route("[controller]/[action]")]
     public class UserController : ControllerBase
     {
-        IConfiguration _config;
-        private readonly JwtSettings _jwtSettings;
         private readonly LoginService _loginService;
+        private readonly UserService _userService;
 
-        public UserController(IConfiguration config, JwtSettings jwtSettings)
+        public UserController(UserService userService, LoginService loginService)
         {
-            _config = config;
-            _jwtSettings = jwtSettings;
-            _loginService = new LoginService(jwtSettings, config);
+            _loginService = loginService;
+            _userService = userService;
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] UserForm form)
         {
-            var data = await UserService.Create(form, _config);
+            var data = await _userService.Create(form);
             var serialized = JsonSerializer.Serialize(data);
             return data.Data != null ? Ok(serialized) : BadRequest(serialized);
         }
@@ -36,7 +34,7 @@ namespace Authentication_clone.Controllers
         {
             var tokenString = Request.Headers.Authorization
                               .ToString().Split(" ")[1];
-            var user = await UserService.GetInfo(tokenString, _config);
+            var user = await _userService.GetInfo(tokenString);
             return user != null ? Ok(user) : NotFound(); 
         }
 
@@ -45,7 +43,7 @@ namespace Authentication_clone.Controllers
         public async Task<ActionResult> Update([FromBody] UpdateUserForm form)
         {
             var routeId = Request.RouteValues["id"];
-            var data = await UserService.Update(form, NullableHelpers.TryParseNullableInt((string?)routeId), _config);
+            var data = await _userService.Update(form, NullableHelpers.TryParseNullableInt((string?)routeId));
             var serialized = JsonSerializer.Serialize(data);
             return data?.Data != null ? Ok(serialized) : BadRequest(serialized);
         }
@@ -55,7 +53,7 @@ namespace Authentication_clone.Controllers
         public async Task<ActionResult> Delete()
         {
             var routeId = Request.RouteValues["id"];
-            var data = await UserService.Delete(NullableHelpers.TryParseNullableInt((string?)routeId), _config);
+            var data = await _userService.Delete(NullableHelpers.TryParseNullableInt((string?)routeId));
             var serialized = JsonSerializer.Serialize(data);
             return data?.Data != null ? Ok(serialized) : BadRequest(serialized);
         }

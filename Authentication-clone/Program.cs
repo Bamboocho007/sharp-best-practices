@@ -1,4 +1,7 @@
+using Authentication_clone.Auth;
+using Authentication_clone.Db;
 using Authentication_clone.Extentions;
+using Authentication_clone.ModelServices;
 using FluentValidation;
 using Microsoft.OpenApi.Models;
 using System.Globalization;
@@ -12,6 +15,10 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddJwtService(builder.Configuration);
+builder.Services.AddSingleton<DapperContext>();
+builder.Services.AddScoped<UsersRepo>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<LoginService>();
 builder.Services.AddSwaggerGen(c =>
 {
     c.AddSecurityDefinition("bearerAuth", new OpenApiSecurityScheme

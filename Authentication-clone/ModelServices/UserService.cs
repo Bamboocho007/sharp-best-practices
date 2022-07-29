@@ -6,20 +6,26 @@ using Authentication_clone.Validators;
 
 namespace Authentication_clone.ModelServices
 {
-    public static class UserService
+    public class UserService
     {
-        public static async Task<User?> GetInfo(string tokenString, IConfiguration config)
+        private readonly UsersRepo _usersRepo;
+        public UserService(UsersRepo usersRepo)
+        {
+            _usersRepo = usersRepo;
+        }
+
+        public async Task<User?> GetInfo(string tokenString)
         {
             var idFromClaims = JwtHelper.GetJWTTokenClaim(tokenString, "Id");
             int id = int.TryParse(idFromClaims, out id) ? id : 0;
-            return await new UsersRepo(config).GetById(id);
+            return await _usersRepo.GetById(id);
         }
 
-        public static async Task<ResponseData<User?>> Create(UserForm form, IConfiguration config)
+        public async Task<ResponseData<User?>> Create(UserForm form)
         {
             UserFormValidator validator = new ();
             var validated = validator.Validate(form);
-            var repo = new UsersRepo(config);
+            var repo = _usersRepo;
 
             if (await repo.GetByEmail(form.Email) != null)
             {
@@ -36,7 +42,7 @@ namespace Authentication_clone.ModelServices
             return new ResponseData<User?>("Form data is not valid!", validated.Errors);
         }
 
-        public static async Task<ResponseData<User?>> Update(UpdateUserForm form, int? userId, IConfiguration config)
+        public async Task<ResponseData<User?>> Update(UpdateUserForm form, int? userId)
         {
             if (userId == null)
             {
@@ -45,7 +51,7 @@ namespace Authentication_clone.ModelServices
 
             UpdateUserFormValidator validator = new();
             var validated = validator.Validate(form);
-            var repo = new UsersRepo(config);
+            var repo = _usersRepo;
             var currentUser = await repo.GetById((int)userId);
 
             if (currentUser != null)
@@ -62,15 +68,13 @@ namespace Authentication_clone.ModelServices
             return new ResponseData<User?>("User no exists!");
         }
 
-        public static async Task<ResponseData<User?>> Delete(int? id, IConfiguration config)
+        public async Task<ResponseData<User?>> Delete(int? id)
         {
             if (id == null)
             {
                 return new ResponseData<User?>("User id is required!");
             }
-
-            var repo = new UsersRepo(config);
-            return new ResponseData<User?>(await repo.Delete((int)id));
+            return new ResponseData<User?>(await _usersRepo.Delete((int)id));
         }
     }
 }
