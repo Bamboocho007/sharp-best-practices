@@ -19,11 +19,6 @@ namespace Authentication_clone.ModelServices
 
         public async Task<ResponseData<UserDto?>> GetInfo(string tokenString)
         {
-            if (tokenString == null)
-            {
-                return new ResponseData<UserDto?>("Token not exists!");
-            }
-
             var idFromClaims = JwtHelper.GetJWTTokenClaim(tokenString, "Id");
             int id = int.TryParse(idFromClaims, out id) ? id : 0;
             var user = await _usersRepo.GetById(id);
