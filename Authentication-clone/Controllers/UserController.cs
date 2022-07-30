@@ -49,15 +49,15 @@ namespace Authentication_clone.Controllers
                 .SetSlidingExpiration(TimeSpan.FromSeconds(30))
                 .SetAbsoluteExpiration(DateTime.Now.AddMinutes(1));
 
-            var user = await _userService.GetInfo(tokenString);
-            if (user != null)
+            var data = await _userService.GetInfo(tokenString);
+            if (data.Data != null)
             {
-                var userBytes = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(user));
+                var userBytes = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data));
                 await _chache.SetAsync($"userInfo-{tokenString}", userBytes, chacheOptions);
-                return Ok(user);
+                return Ok(data);
             }
 
-            return NotFound(); 
+            return NotFound(data); 
         }
 
         [HttpPut("{id}")]

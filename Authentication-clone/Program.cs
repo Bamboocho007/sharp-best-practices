@@ -1,6 +1,7 @@
 using Authentication_clone.Auth;
 using Authentication_clone.Db;
 using Authentication_clone.Extentions;
+using Authentication_clone.Helpers;
 using Authentication_clone.ModelServices;
 using FluentValidation;
 using Microsoft.OpenApi.Models;
@@ -16,6 +17,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddJwtService(builder.Configuration);
 builder.Services.AddSingleton<DapperContext>();
+builder.Services.AddSingleton(MapperHelper.GetMapper(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"));
 builder.Services.AddScoped<UsersRepo>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<LoginService>();
