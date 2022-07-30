@@ -3,6 +3,7 @@ using Authentication_clone.DTOs;
 using Authentication_clone.Helpers;
 using Authentication_clone.ModelServices;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
 
 namespace Authentication_clone.Controllers
@@ -13,11 +14,13 @@ namespace Authentication_clone.Controllers
     {
         private readonly LoginService _loginService;
         private readonly UserService _userService;
+        private readonly IDistributedCache _chache;
 
-        public UserController(UserService userService, LoginService loginService)
+        public UserController(UserService userService, LoginService loginService, IDistributedCache chache)
         {
             _loginService = loginService;
             _userService = userService;
+            _chache = chache;
         }
 
         [HttpPost]
@@ -34,8 +37,27 @@ namespace Authentication_clone.Controllers
         {
             var tokenString = Request.Headers.Authorization
                               .ToString().Split(" ")[1];
+            var chacheedInfoBytes = await _chache.GetAsync($"userInfo-{tokenString}");
+
+            if (chacheedInfoBytes != null)
+            {
+                var userString = System.Text.Encoding.UTF8.GetString(chacheedInfoBytes);
+                return Ok(userString);
+            }
+
+            var chacheOptions = new DistributedCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromSeconds(30))
+                .SetAbsoluteExpiration(DateTime.Now.AddMinutes(1));
+
             var user = await _userService.GetInfo(tokenString);
-            return user != null ? Ok(user) : NotFound(); 
+            if (user != null)
+            {
+                var userBytes = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(user));
+                await _chache.SetAsync($"userInfo-{tokenString}", userBytes, chacheOptions);
+                return Ok(user);
+            }
+
+            return NotFound(); 
         }
 
         [HttpPut("{id}")]

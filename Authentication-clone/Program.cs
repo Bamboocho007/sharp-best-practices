@@ -19,6 +19,10 @@ builder.Services.AddSingleton<DapperContext>();
 builder.Services.AddScoped<UsersRepo>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<LoginService>();
+builder.Services.AddStackExchangeRedisCache(options => {
+    options.Configuration = builder.Configuration.GetConnectionString("RedisConfig");
+    options.InstanceName = "RedisInstance";
+});
 builder.Services.AddSwaggerGen(c =>
 {
     c.AddSecurityDefinition("bearerAuth", new OpenApiSecurityScheme
