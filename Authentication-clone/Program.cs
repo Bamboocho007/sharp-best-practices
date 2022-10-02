@@ -4,8 +4,10 @@ using Authentication_clone.Extentions;
 using Authentication_clone.Helpers;
 using Authentication_clone.ModelServices;
 using FluentValidation;
+using MediatR;
 using Microsoft.OpenApi.Models;
 using System.Globalization;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 ValidatorOptions.Global.LanguageManager.Culture = new CultureInfo("en");
@@ -18,6 +20,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddJwtService(builder.Configuration);
 builder.Services.AddSingleton<DapperContext>();
 builder.Services.AddSingleton(MapperHelper.GetMapper(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"));
+builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
 builder.Services.AddScoped<UsersRepo>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<LoginService>();

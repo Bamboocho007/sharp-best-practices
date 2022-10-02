@@ -1,10 +1,9 @@
-﻿using Authentication_clone.Auth;
+﻿using Authentication_clone.Application.Commands;
+using Authentication_clone.Application.Queries;
+using Authentication_clone.Auth;
 using Authentication_clone.DTOs;
-using Authentication_clone.Helpers;
-using Authentication_clone.ModelServices;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Distributed;
-using System.Text.Json;
 
 namespace Authentication_clone.Controllers
 {
@@ -13,22 +12,19 @@ namespace Authentication_clone.Controllers
     public class UserController : ControllerBase
     {
         private readonly LoginService _loginService;
-        private readonly UserService _userService;
-        private readonly IDistributedCache _chache;
+        private readonly IMediator _mediator;
 
-        public UserController(UserService userService, LoginService loginService, IDistributedCache chache)
+        public UserController(LoginService loginService, IMediator mediator)
         {
             _loginService = loginService;
-            _userService = userService;
-            _chache = chache;
+            _mediator = mediator;
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] UserForm form)
         {
-            var data = await _userService.Create(form);
-            var serialized = JsonSerializer.Serialize(data);
-            return data.Data != null ? Ok(serialized) : BadRequest(serialized);
+            var data = await _mediator.Send(new CreateUserCommand { Form = form});
+            return data.Data != null ? Ok(data) : BadRequest(data);
         }
 
         [HttpGet]
@@ -37,27 +33,14 @@ namespace Authentication_clone.Controllers
         {
             var tokenString = Request.Headers.Authorization
                               .ToString().Split(" ")[1];
-            var chacheedInfoBytes = await _chache.GetAsync($"userInfo-{tokenString}");
+            var user = await _mediator.Send(new GetUserQuery { TokenString = tokenString });
 
-            if (chacheedInfoBytes != null)
+            if (user.Data != null)
             {
-                var userString = System.Text.Encoding.UTF8.GetString(chacheedInfoBytes);
-                return Ok(userString);
+                return Ok(user);
             }
 
-            var chacheOptions = new DistributedCacheEntryOptions()
-                .SetSlidingExpiration(TimeSpan.FromSeconds(30))
-                .SetAbsoluteExpiration(DateTime.Now.AddMinutes(1));
-
-            var data = await _userService.GetInfo(tokenString);
-            if (data.Data != null)
-            {
-                var userBytes = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data));
-                await _chache.SetAsync($"userInfo-{tokenString}", userBytes, chacheOptions);
-                return Ok(data);
-            }
-
-            return NotFound(data); 
+            return NotFound(user); 
         }
 
         [HttpPut("{id}")]
@@ -65,9 +48,8 @@ namespace Authentication_clone.Controllers
         public async Task<ActionResult> Update([FromBody] UpdateUserForm form)
         {
             var routeId = Request.RouteValues["id"];
-            var data = await _userService.Update(form, NullableHelpers.TryParseNullableInt((string?)routeId));
-            var serialized = JsonSerializer.Serialize(data);
-            return data?.Data != null ? Ok(serialized) : BadRequest(serialized);
+            var data = await _mediator.Send(new UpdateUserCommand { Form = form, RouteId = (string?)routeId });
+            return data?.Data != null ? Ok(data) : BadRequest(data);
         }
 
         [HttpDelete("{id}")]
@@ -75,17 +57,15 @@ namespace Authentication_clone.Controllers
         public async Task<ActionResult> Delete()
         {
             var routeId = Request.RouteValues["id"];
-            var data = await _userService.Delete(NullableHelpers.TryParseNullableInt((string?)routeId));
-            var serialized = JsonSerializer.Serialize(data);
-            return data?.Data != null ? Ok(serialized) : BadRequest(serialized);
+            var data = await _mediator.Send(new DeleteUserCommand { RouteId = (string?)routeId });
+            return data?.Data != null ? Ok(data) : BadRequest(data);
         }
 
         [HttpPost]
         public async Task<ActionResult> GetToken([FromBody] LoginForm loginForm)
         {
             var data = await _loginService.Login(loginForm);
-            var serialized = JsonSerializer.Serialize(data);
-            return data.Data != null ? Ok(serialized) : BadRequest(serialized);
+            return data.Data != null ? Ok(data) : BadRequest(data);
         }
     }
 }
