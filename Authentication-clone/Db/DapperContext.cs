@@ -13,6 +13,6 @@ namespace Authentication_clone.Db
             _connectionString = config.GetConnectionString("PgConnection");
         }
 
-        public NpgsqlConnection CreateConnection() => new NpgsqlConnection(_connectionString);
+        public NpgsqlConnection CreateConnection() => new(_connectionString);
     }
 }

@@ -4,6 +4,8 @@ using Authentication_clone.Auth;
 using Authentication_clone.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
+//using Serilog;
 
 namespace Authentication_clone.Controllers
 {
@@ -13,11 +15,13 @@ namespace Authentication_clone.Controllers
     {
         private readonly LoginService _loginService;
         private readonly IMediator _mediator;
+        //private readonly ILogger _logger;
 
         public UserController(LoginService loginService, IMediator mediator)
         {
             _loginService = loginService;
             _mediator = mediator;
+            //_logger = logger;
         }
 
         [HttpPost]
@@ -34,6 +38,8 @@ namespace Authentication_clone.Controllers
             var tokenString = Request.Headers.Authorization
                               .ToString().Split(" ")[1];
             var user = await _mediator.Send(new GetUserQuery { TokenString = tokenString });
+            //_logger.LogInformation("user use GetUserInfo {@User}", user);
+            Log.Information("user use GetUserInfo {@User}", user);
 
             if (user.Data != null)
             {
